@@ -12,10 +12,10 @@ Uses https://github.com/jsharkey13/iphone_backup_decrypt
 
 You may need to permit Terminal to have Full Disk Access on macOS for it to be permitted to read the `MobileSync/Backup` folder.
 
-     ./dump-iphone-backup.py -b ~/LibraryApplication\ Support/MobileSync/Backup/SOME-GUID/ -o ~/output/ 
+     ./dump-iphone-backup.py -b ~/Library/Application\ Support/MobileSync/Backup/SOME-GUID/ -o ~/output/ 
      # This will prompt interactively for the backup passphrase
 
-     ./dump-iphone-backup.py -b ~/LibraryApplication\ Support/MobileSync/Backup/SOME-GUID/ -o ~/output/ -p some-passphrase
+     ./dump-iphone-backup.py -b ~/Library/Application\ Support/MobileSync/Backup/SOME-GUID/ -o ~/output/ -p some-passphrase
      # If comfortable, you can pass the passphrase on the command line
 
 ## Results
