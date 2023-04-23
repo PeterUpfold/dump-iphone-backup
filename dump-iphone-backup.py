@@ -34,7 +34,13 @@ if not os.path.isdir(args.backup_path):
     raise TypeError('The provided backup path does not exist or is not a directory.')
 
 if not os.path.isdir(args.output_path):
-    raise TypeError('The provided output path does not exist or is not a directory.')
+    should_create = ''
+    while should_create.lower() != 'y' and should_create.lower() != 'n':
+        should_create = input(f'{args.output_path} does not exist. Should we create it? (y/n): ')
+    if should_create.lower() == 'y':
+        os.makedirs(args.output_path)
+    else:
+        raise TypeError('The provided output path does not exist or is not a directory.')
 
 backup=EncryptedBackup(backup_directory=args.backup_path, passphrase=passphrase)
 
