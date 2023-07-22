@@ -14,10 +14,12 @@ import os
 import sqlite3
 from contextlib import closing
 
-parser = argparse.ArgumentParser(description='Command line client to dump iPhone encrypted backup to flat folder of items.')
+parser = argparse.ArgumentParser(description='Command line client to dump iPhone encrypted backup to a domain-organised folder of items.')
 parser.add_argument('-p', '--passphrase', type=str, default=None, required=False, help='The passphrase of the backup. If not passed, the tool will prompt interactively for the passphrase')
 parser.add_argument('-b', '--backup-path', type=str, default=None, required=True, help='The path to the backup directory (~/Library/Application Support/MobileSync/EXAMPLE)')
-parser.add_argument('-o', '--output-path', type=str, default=None, required=True, help='The path of the output directory where the flat files will be dumped.')
+parser.add_argument('-o', '--output-path', type=str, default=None, required=True, help='The path of the output directory where the organised files will be dumped.')
+parser.add_argument('-z', '--no-create-parent-dirs', action='store_true', help='Do not create any parent directories required to create the output directory')
+parser.add_argument('-e', '--remove-empty-domains', action='store_true', help='Remove any directories for backup domains that do not contain any files')
 
 args = parser.parse_args()
 
@@ -29,15 +31,14 @@ if args.passphrase is None:
 else:
     passphrase = args.passphrase
 
-
+# check the input backup folder
 if not os.path.isdir(args.backup_path):
     raise TypeError('The provided backup path does not exist or is not a directory.')
 
+
+# check the output folder
 if not os.path.isdir(args.output_path):
-    should_create = ''
-    while should_create.lower() != 'y' and should_create.lower() != 'n':
-        should_create = input(f'{args.output_path} does not exist. Should we create it? (y/n): ')
-    if should_create.lower() == 'y':
+    if not args.no_create_parent_dirs:
         os.makedirs(args.output_path)
     else:
         raise TypeError('The provided output path does not exist or is not a directory.')
@@ -68,3 +69,11 @@ with closing(sqlite3.connect(manifest_path)) as connection:
 
         print(f'Extracting {relativePath} from domain {domain}')
         backup.extract_file(relative_path = relativePath, output_filename=os.path.join(args.output_path, domain, relativePath))
+
+    if args.remove_empty_domains:
+        # search for and remove empty domain directories
+        for dir in os.scandir(args.output_path):
+            if dir.is_file():
+                continue
+            if len([name for name in os.listdir(dir)]) < 1:
+                os.rmdir(dir)
