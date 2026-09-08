@@ -11,8 +11,23 @@ from iphone_backup_decrypt import EncryptedBackup, RelativePath, RelativePathsLi
 import argparse
 import getpass
 import os
+import re
 import sqlite3
 from contextlib import closing
+
+
+def sanitize_filename_component(name: str) -> str:
+    return re.sub(r'[<>:"/\\|?*]', '_', name)
+
+def safe_relative_path(unix_relative_path: str) -> str:
+    if not unix_relative_path:
+        return ''
+    # Split incoming iOS backup path on forward slashes
+    parts = unix_relative_path.split('/')
+    # Sanitize each segment (directories and filename)
+    clean_parts = [sanitize_filename_component(part) for part in parts if part]
+    return os.path.join(*clean_parts) if clean_parts else ''
+
 
 parser = argparse.ArgumentParser(description='Command line client to dump iPhone encrypted backup to a domain-organised folder of items.')
 parser.add_argument('-p', '--passphrase', type=str, default=None, required=False, help='The passphrase of the backup. If not passed, the tool will prompt interactively for the passphrase')
@@ -64,11 +79,11 @@ with closing(sqlite3.connect(manifest_path)) as connection:
         # cut the last path item from relativePath
         relative_path_without_file = os.path.split(relativePath)[:-1]
 
-        containing_dir = os.path.join(args.output_path, domain, relative_path_without_file[0])
+        containing_dir = os.path.join(args.output_path, domain, safe_relative_path(relative_path_without_file[0]))
         os.makedirs(containing_dir, exist_ok=True)
 
         print(f'Extracting {relativePath} from domain {domain}')
-        backup.extract_file(relative_path = relativePath, output_filename=os.path.join(args.output_path, domain, relativePath))
+        backup.extract_file(relative_path=relativePath, output_filename=os.path.join(args.output_path, domain, safe_relative_path(relativePath)))
 
     if args.remove_empty_domains:
         # search for and remove empty domain directories
